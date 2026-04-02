@@ -49,12 +49,6 @@
         .preg-C { background-color: #f1c40f; color: black; }
         .preg-D { background-color: #e67e22; color: white; }
         .preg-X { background-color: #e74c3c; color: white; }
-        
-        .sticky-search {
-            position: sticky;
-            top: 10px;
-            z-index: 1000;
-        }
     </style>
 </head>
 <body>
@@ -68,7 +62,7 @@
     <div class="search-box mb-5">
         <div class="input-group input-group-lg">
             <span class="input-group-text bg-transparent border-end-0">🔍</span>
-            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="ค้นหาชื่อยา, ชื่อสามัญ, หรือสรรพคุณ...">
+            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="ค้นหาชื่อยา, ชื่อสามัญ, หรือรหัส TPU...">
         </div>
         <div id="stats" class="mt-3 text-center text-muted">กำลังโหลดข้อมูลยา...</div>
     </div>
@@ -78,8 +72,9 @@
             <table class="table table-hover align-middle mb-0" id="drugTable">
                 <thead>
                     <tr>
+                        <th>TPU (TMT)</th>
                         <th style="width: 25%;">ชื่อยา</th>
-                        <th style="width: 25%;">ชื่อสามัญ</th>
+                        <th style="width: 20%;">ชื่อสามัญ</th>
                         <th>ความแรง</th>
                         <th>หน่วย</th>
                         <th>ราคา</th>
@@ -94,14 +89,13 @@
     </div>
     
     <footer class="text-center my-5 text-muted">
-        <small>© 2026 กลุ่มงานเภสัชกรรม รพ.สวนผึ้ง | พัฒนาโดย AI Assistant สำหรับคุณสุพจน์</small>
+        <small>© 2026 กลุ่มงานเภสัชกรรม รพ.สวนผึ้ง | พัฒนาโดย AI Assistant</small>
     </footer>
 </div>
 
 <script>
     let drugData = [];
 
-    // ดึงข้อมูลจากไฟล์ data.csv
     Papa.parse("data.csv", {
         download: true,
         header: true,
@@ -118,14 +112,18 @@
         tbody.innerHTML = '';
         
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">ไม่พบข้อมูลยาที่ค้นหา</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">ไม่พบข้อมูลยาที่ค้นหา</td></tr>';
             return;
         }
 
         data.forEach(item => {
             const pregClass = item['Pregnancy Cagetory'] ? `preg-${item['Pregnancy Cagetory']}` : 'bg-light text-muted';
+            // ดึงข้อมูลรหัส TMT สกส. มาแสดงเป็น TPU
+            const tpuCode = item['รหัส TMT สกส.'] || '-';
+            
             const row = `
                 <tr>
+                    <td><code class="text-dark">${tpuCode}</code></td>
                     <td><strong class="text-primary">${item['ชื่อยา'] || '-'}</strong></td>
                     <td><small class="text-secondary">${item['ชื่อสามัญ'] || '-'}</small></td>
                     <td>${item['ความแรง'] || '-'}</td>
@@ -143,13 +141,12 @@
         document.getElementById('stats').innerHTML = `พบยาในระบบทั้งหมด <strong>${count}</strong> รายการ`;
     }
 
-    // ระบบค้นหาอัจฉริยะ (ค้นหาทันทีที่พิมพ์)
     document.getElementById('searchInput').addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase();
         const filtered = drugData.filter(item => 
             (item['ชื่อยา'] && item['ชื่อยา'].toLowerCase().includes(term)) ||
             (item['ชื่อสามัญ'] && item['ชื่อสามัญ'].toLowerCase().includes(term)) ||
-            (item['Dosage Form'] && item['Dosage Form'].toLowerCase().includes(term))
+            (item['รหัส TMT สกส.'] && item['รหัส TMT สกส.'].toString().includes(term))
         );
         displayData(filtered);
         updateStats(filtered.length);
